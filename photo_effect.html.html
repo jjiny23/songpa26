@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>중학교 2학년 과학 - 식물의 광합성 가상 실험실</title>
+  <style>
+    /* =============================================================
+       선생님 수정 안내 (CONFIG는 스크립트 상단에 위치합니다)
+       - 디자인 시스템: 딥 다크 테마 (#121212, #181818, #1f1f1f)
+       - 액센트 컬러: 비비드 그린 (#1ed760)
+       - 기하학 형태: 풀 필(Pill, 9999px) 및 원형(50%) 인터랙션 버튼
+       ============================================================= */
+    :root {
+      --bg-base: #121212;
+      --surface-card: #181818;
+      --surface-elevated: #1f1f1f;
+      --surface-hover: #282828;
+      --accent-green: #1ed760;
+      --accent-green-hover: #1fdf64;
+      --text-base: #ffffff;
+      --text-muted: #b3b3b3;
+      --text-subtle: #727272;
+      --semantic-red: #f3727f;
+      --semantic-orange: #ffa42b;
+      --semantic-blue: #539df5;
+      --border-subtle: #2e2e2e;
+      --border-pill: #4d4d4d;
+      --shadow-heavy: 0 12px 28px rgba(0, 0, 0, 0.65);
+      --shadow-card: 0 8px 16px rgba(0, 0, 0, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-base);
+      line-height: 1.5;
+      padding: 16px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 상단 헤더 - 다크 서피스 & 네온 그린 포인트 */
+    header {
+      background-color: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-base);
+      padding: 20px 28px;
+      border-radius: 12px;
+      margin-bottom: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--shadow-heavy);
+    }
+
+    .header-titles h1 {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-base);
+    }
+
+    .header-titles h1 .title-badge {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background-color: var(--accent-green);
+      box-shadow: 0 0 12px var(--accent-green);
+    }
+
+    .header-titles p {
+      font-size: 16px;
+      color: var(--text-muted);
+      margin-top: 5px;
+      font-weight: 400;
+    }
+
+    /* 탭 컨트롤 - 둥근 필 버튼 시스템 */
+    .tab-container {
+      display: flex;
+      background: var(--surface-elevated);
+      padding: 5px;
+      border-radius: 9999px;
+      gap: 6px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .tab-btn {
+      padding: 10px 22px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 15px;
+      font-weight: 700;
+      border-radius: 9999px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-base);
+    }
+
+    .tab-btn.active {
+      background: var(--text-base);
+      color: var(--bg-base);
+      box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+    }
+
+    /* 메인 그리드 레이아웃 */
+    main {
+      display: grid;
+      grid-template-columns: minmax(360px, 1.25fr) minmax(340px, 1fr);
+      gap: 20px;
+      flex: 1;
+    }
+
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--surface-card);
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-card);
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .card-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-base);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 14px;
+    }
+
+    /* 실험 애니메이션 뷰포트 */
+    .simulation-box {
+      position: relative;
+      background: #0a0a0a;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+      height: 380px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.8);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* 실시간 측정 대시보드 */
+    .status-dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+    }
+
+    .metric-badge {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 14px 16px;
+      text-align: center;
+    }
+
+    .metric-badge span {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+    }
+
+    .metric-badge strong {
+      display: block;
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text-base);
+      margin-top: 4px;
+    }
+
+    .metric-badge strong.highlight {
+      color: var(--accent-green);
+      text-shadow: 0 0 14px rgba(30, 215, 96, 0.4);
+    }
+
+    /* 컨트롤 그룹 */
+    .controls-group {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .variable-selector {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .variable-selector p {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-base);
+      margin-bottom: 12px;
+    }
+
+    .chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip-btn {
+      flex: 1;
+      min-width: 110px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      border: 1px solid var(--border-pill);
+      background: transparent;
+      color: var(--text-muted);
+      border-radius: 9999px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .chip-btn:hover {
+      color: var(--text-base);
+      border-color: var(--text-base);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .chip-btn.active {
+      background: var(--text-base);
+      color: var(--bg-base);
+      border-color: var(--text-base);
+      font-weight: 700;
+    }
+
+    /* 슬라이더 카드 디자인 */
+    .slider-row {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 16px 18px;
+      transition: all 0.2s ease;
+    }
+
+    .slider-row.disabled {
+      opacity: 0.35;
+      pointer-events: none;
+      filter: grayscale(0.8);
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .slider-label {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-base);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .slider-val-tag {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--accent-green);
+      background: #14281a;
+      padding: 4px 14px;
+      border-radius: 9999px;
+      border: 1px solid rgba(30, 215, 96, 0.3);
+    }
+
+    .slider-row input[type="range"] {
+      width: 100%;
+      height: 8px;
+      border-radius: 9999px;
+      background: #404040;
+      outline: none;
+      cursor: pointer;
+      margin: 10px 0;
+      accent-color: var(--accent-green);
+    }
+
+    .slider-limits {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-subtle);
+    }
+
+    /* 하단 액션 버튼 툴바 */
+    .btn-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    .action-btn {
+      flex: 1;
+      min-width: 120px;
+      padding: 16px 20px;
+      font-size: 15px;
+      font-weight: 700;
+      border: none;
+      border-radius: 9999px;
+      cursor: pointer;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      transition: transform 0.1s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .action-btn:hover {
+      transform: scale(1.02);
+    }
+
+    .action-btn:active {
+      transform: scale(0.97);
+    }
+
+    /* 버튼 스타일 */
+    .btn-start {
+      background: var(--accent-green);
+      color: #000000;
+      font-weight: 800;
+      box-shadow: 0 4px 14px rgba(30, 215, 96, 0.4);
+    }
+    .btn-start:hover {
+      background: var(--accent-green-hover);
+      box-shadow: 0 6px 20px rgba(30, 215, 96, 0.6);
+    }
+
+    .btn-pause {
+      background: var(--surface-elevated);
+      color: var(--semantic-orange);
+      border: 1px solid var(--border-pill);
+    }
+    .btn-pause:hover {
+      background: var(--surface-hover);
+    }
+
+    .btn-reset {
+      background: var(--surface-elevated);
+      color: var(--text-muted);
+      border: 1px solid var(--border-pill);
+    }
+    .btn-reset:hover {
+      background: var(--surface-hover);
+      color: var(--text-base);
+    }
+
+    .btn-record {
+      background: var(--text-base);
+      color: #000000;
+      font-weight: 700;
+    }
+    .btn-record:hover {
+      background: #eeeeee;
+    }
+
+    /* 그래프 및 테이블 영역 */
+    .graph-container {
+      background: #0f0f0f;
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      height: 230px;
+      position: relative;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      max-height: 220px;
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      background: #141414;
+    }
+
+    /* 그래프 상단 X축 변인 전환 미니 탭 */
+    .graph-tabs {
+      display: inline-flex;
+      background: var(--surface-elevated);
+      border-radius: 9999px;
+      padding: 3px;
+      gap: 4px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .graph-tab-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .graph-tab-btn.active {
+      background: var(--accent-green);
+      color: #000000;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    th {
+      background: var(--surface-elevated);
+      color: var(--text-muted);
+      font-weight: 700;
+      padding: 12px;
+      position: sticky;
+      top: 0;
+      border-bottom: 1px solid var(--border-subtle);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 13px;
+    }
+
+    td {
+      padding: 11px 12px;
+      border-bottom: 1px solid #222222;
+      color: var(--text-base);
+      font-weight: 500;
+    }
+
+    tr:nth-child(even) {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .empty-state {
+      padding: 30px;
+      text-align: center;
+      color: var(--text-subtle);
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .clear-btn {
+      padding: 6px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 9999px;
+      border: 1px solid var(--border-pill);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+    }
+
+    .clear-btn:hover {
+      border-color: var(--text-base);
+      color: var(--text-base);
+    }
+
+    /* 교육 안내 카드 */
+    .edu-note {
+      background: var(--surface-elevated);
+      border-left: 4px solid var(--accent-green);
+      padding: 16px 20px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 400;
+      color: #e5e5e5;
+      line-height: 1.6;
+    }
+
+    .edu-note strong {
+      color: var(--text-base);
+    }
+
+    .edu-note .tip-title {
+      color: var(--accent-green);
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <!-- 상단 헤더 -->
+  <header>
+    <div class="header-titles">
+      <h1><span class="title-badge"></span>식물의 광합성에 영향을 미치는 요인 탐구</h1>
+      <p>빛의 세기 · 이산화탄소 농도 · 온도가 산소 발생량에 미치는 영향 관찰 실험실</p>
+    </div>
+    <div class="tab-container" role="tablist">
+      <button class="tab-btn active" id="tabBasic" onclick="changeMode('basic')">기초 탐구 (변인 통제)</button>
+      <button class="tab-btn" id="tabAdvanced" onclick="changeMode('advanced')">심화 탐구 (자유 조작)</button>
+    </div>
+  </header>
+
+  <!-- 메인 2분할 콘텐츠 -->
+  <main>
+    <!-- 왼쪽 컬럼: 시뮬레이션 및 컨트롤 -->
+    <div class="card">
+      <div class="card-title">
+        <span>가상 실험 장치 (검정말 광합성 관찰)</span>
+        <span id="expTimer" style="font-size: 16px; color: var(--accent-green); font-weight: 700;">경과 시간: 0.0초</span>
+      </div>
+
+      <!-- 기포 애니메이션 캔버스 -->
+      <div class="simulation-box">
+        <canvas id="simCanvas" width="600" height="380"></canvas>
+      </div>
+
+      <!-- 상태 메트릭스 -->
+      <div class="status-dashboard">
+        <div class="metric-badge">
+          <span>분당 산소 기포 수</span>
+          <strong id="displayBubbleRate" class="highlight">0 개/분</strong>
+        </div>
+        <div class="metric-badge">
+          <span>누적 산소 기포 수</span>
+          <strong id="displayTotalBubbles">0 개</strong>
+        </div>
+        <div class="metric-badge">
+          <span>실험 상태</span>
+          <strong id="displayStatusText" style="color: var(--text-muted); font-size: 20px;">대기 중</strong>
+        </div>
+      </div>
+
+      <!-- 기초 탐구 변인 선택기 -->
+      <div class="variable-selector" id="basicSelectorBox">
+        <p>조작할 변인 1가지를 선택하세요 (다른 요인은 자동으로 최적 통제됩니다):</p>
+        <div class="chip-group">
+          <button class="chip-btn active" id="chipLight" onclick="selectControlledVariable('light')">빛의 세기</button>
+          <button class="chip-btn" id="chipCo2" onclick="selectControlledVariable('co2')">이산화탄소 농도</button>
+          <button class="chip-btn" id="chipTemp" onclick="selectControlledVariable('temp')">물의 온도</button>
+        </div>
+      </div>
+
+      <!-- 조작 슬라이더 -->
+      <div class="controls-group">
+        <!-- 1. 빛의 세기 -->
+        <div class="slider-row" id="rowLight">
+          <div class="slider-header">
+            <span class="slider-label">빛의 세기 (전등 밝기)</span>
+            <span class="slider-val-tag" id="valLightText">50 %</span>
+          </div>
+          <input type="range" id="sliderLight" min="0" max="100" step="1" value="50" oninput="updateValues()">
+          <div class="slider-limits">
+            <span>0 % (빛 없음)</span>
+            <span>광포화점 약 70 %</span>
+            <span>100 % (최대)</span>
+          </div>
+        </div>
+
+        <!-- 2. 이산화탄소 농도 -->
+        <div class="slider-row" id="rowCo2">
+          <div class="slider-header">
+            <span class="slider-label">이산화탄소 농도</span>
+            <span class="slider-val-tag" id="valCo2Text">1.0 %</span>
+          </div>
+          <input type="range" id="sliderCo2" min="0.0" max="2.0" step="0.1" value="1.0" oninput="updateValues()">
+          <div class="slider-limits">
+            <span>0.0 % (CO₂ 없음)</span>
+            <span>포화 기준 약 1.0 %</span>
+            <span>2.0 % (충분)</span>
+          </div>
+        </div>
+
+        <!-- 3. 수온 -->
+        <div class="slider-row" id="rowTemp">
+          <div class="slider-header">
+            <span class="slider-label">물의 온도</span>
+            <span class="slider-val-tag" id="valTempText">25 ℃</span>
+          </div>
+          <input type="range" id="sliderTemp" min="0" max="50" step="1" value="25" oninput="updateValues()">
+          <div class="slider-limits">
+            <span>0 ℃ (빙점)</span>
+            <span>최적 수온 (30~35 ℃)</span>
+            <span>50 ℃ (효소 변성 중단)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 툴바 버튼 -->
+      <div class="btn-toolbar">
+        <button class="action-btn btn-start" id="btnStart" onclick="startSim()">시작</button>
+        <button class="action-btn btn-pause" id="btnPause" onclick="pauseSim()">일시정지</button>
+        <button class="action-btn btn-reset" id="btnReset" onclick="resetSim()">처음으로</button>
+        <button class="action-btn btn-record" id="btnRecord" onclick="recordCurrentData()">결과 기록</button>
+      </div>
+    </div>
+
+    <!-- 오른쪽 컬럼: 실시간 누적 그래프 및 결과 테이블 -->
+    <div class="card">
+      <div class="card-title">
+        <span>요인별 광합성량 그래프</span>
+        <div class="graph-tabs" role="tablist">
+          <button class="graph-tab-btn active" id="gtabLight" onclick="setGraphAxis('light')">빛의 세기</button>
+          <button class="graph-tab-btn" id="gtabCo2" onclick="setGraphAxis('co2')">이산화탄소</button>
+          <button class="graph-tab-btn" id="gtabTemp" onclick="setGraphAxis('temp')">물의 온도</button>
+        </div>
+      </div>
+
+      <!-- 그래프 캔버스 -->
+      <div class="graph-container">
+        <canvas id="graphCanvas" width="550" height="230"></canvas>
+      </div>
+
+      <div class="card-title" style="margin-top: 4px;">
+        <span>조건별 실험 결과 비교표</span>
+        <button class="clear-btn" onclick="clearTableData()">기록 지우기</button>
+      </div>
+
+      <!-- 기록 데이터 테이블 -->
+      <div class="table-container">
+        <table id="dataTable">
+          <thead>
+            <tr>
+              <th>순번</th>
+              <th>빛의 세기</th>
+              <th>CO₂ 농도</th>
+              <th>수온</th>
+              <th>분당 기포수</th>
+              <th>누적 기포수</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr id="emptyTableRow">
+              <td colspan="6" class="empty-state">하단 [결과 기록] 버튼을 누르면 현재 조건과 결과가 기록됩니다.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 핵심 원리 팁 -->
+      <div class="edu-note">
+        <span class="tip-title">💡 탐구 핵심 원리 가이드</span>
+        1. <strong>빛의 세기:</strong> 세기가 강해질수록 광합성량이 비례하여 증가하다가 일정 한도(광포화점) 이상에서는 더 증가하지 않습니다.<br>
+        2. <strong>이산화탄소 농도:</strong> 농도가 증가함에 따라 기포 발생량이 늘어나지만, 충분히 많아진 이후에는 일정하게 유지됩니다.<br>
+        3. <strong>온도:</strong> 30~35℃에서 가장 활발하며, 40℃를 넘어가면 잎 세포 내 효소가 변성되어 기포 발생이 급감합니다.
+      </div>
+    </div>
+  </main>
+
+  <script>
+    /* =========================================================================
+       [선생님 설정 영역 (CONFIG)]
+       - 수업 환경이나 교육과정 강조점에 맞춰 기본 수치를 손쉽게 수정하실 수 있습니다.
+       ========================================================================= */
+    const CONFIG = {
+      MAX_BUBBLE_RATE_PER_MIN: 60,   // 최적 조건일 때 1분당 최대 산소 기포 발생량 (개/분)
+      DEFAULT_LIGHT: 50,             // 초기 빛의 세기 (%)
+      DEFAULT_CO2: 1.0,              // 초기 이산화탄소 농도 (%)
+      DEFAULT_TEMP: 25,              // 초기 물의 온도 (℃)
+      LIGHT_SATURATION_POINT: 70,    // 빛의 세기 포화점 (%)
+      CO2_SATURATION_POINT: 1.2,     // 이산화탄소 농도 포화점 (%)
+      OPTIMAL_TEMP: 33,              // 광합성 최적 온도 (℃)
+      TEMP_DEATH: 46                 // 광합성이 완전히 정지하는 고온 한계 (℃)
+    };
+
+    // 시뮬레이션 상태 변수
+    let simMode = 'basic';               // 'basic' (기초: 변인 통제) | 'advanced' (심화: 자유 조작)
+    let controlledVar = 'light';         // 기초 모드 시 조작 변인 ('light', 'co2', 'temp')
+    let graphAxisVar = 'light';          // 그래프 X축 기준 요인 ('light', 'co2', 'temp')
+    let isRunning = false;
+    let elapsedTime = 0;
+    let totalBubbles = 0;
+    let bubbleRatePerMin = 0;
+    let bubbleFractionAccumulator = 0;
+    let lastTimestamp = 0;
+    let recordedRecords = [];
+
+    // 기포 애니메이션 개체
+    const bubblesOnCanvas = [];
+
+    // DOM 캐싱
+    const simCanvas = document.getElementById('simCanvas');
+    const simCtx = simCanvas.getContext('2d');
+    const graphCanvas = document.getElementById('graphCanvas');
+    const graphCtx = graphCanvas.getContext('2d');
+
+    const sliderLight = document.getElementById('sliderLight');
+    const sliderCo2 = document.getElementById('sliderCo2');
+    const sliderTemp = document.getElementById('sliderTemp');
+
+    const valLightText = document.getElementById('valLightText');
+    const valCo2Text = document.getElementById('valCo2Text');
+    const valTempText = document.getElementById('valTempText');
+
+    const displayBubbleRate = document.getElementById('displayBubbleRate');
+    const displayTotalBubbles = document.getElementById('displayTotalBubbles');
+    const displayStatusText = document.getElementById('displayStatusText');
+    const expTimer = document.getElementById('expTimer');
+
+    const rowLight = document.getElementById('rowLight');
+    const rowCo2 = document.getElementById('rowCo2');
+    const rowTemp = document.getElementById('rowTemp');
+    const basicSelectorBox = document.getElementById('basicSelectorBox');
+
+    // 중학교 2학년 과학 원리 계산 수식 (블랙맨의 한정 요인설 & 효소 활성 곡선)
+    function calculatePhotosyntheticRate(lightVal, co2Val, tempVal) {
+      const light = Math.max(0, Math.min(100, Number(lightVal) || 0));
+      const co2 = Math.max(0, Math.min(2.0, Number(co2Val) || 0));
+      const temp = Math.max(0, Math.min(50, Number(tempVal) || 0));
+
+      // 1) 빛 효율 계수
+      let lightFactor = 0;
+      if (light > 0) {
+        const kLight = 22;
+        lightFactor = (light / (light + kLight)) * ((CONFIG.LIGHT_SATURATION_POINT + kLight) / CONFIG.LIGHT_SATURATION_POINT);
+        if (lightFactor > 1) lightFactor = 1;
+      }
+
+      // 2) CO2 농도 효율 계수
+      let co2Factor = 0;
+      if (co2 > 0) {
+        const kCo2 = 0.28;
+        co2Factor = (co2 / (co2 + kCo2)) * ((CONFIG.CO2_SATURATION_POINT + kCo2) / CONFIG.CO2_SATURATION_POINT);
+        if (co2Factor > 1) co2Factor = 1;
+      }
+
+      // 3) 온도 효율 계수
+      let tempFactor = 0;
+      if (temp >= 0 && temp < CONFIG.TEMP_DEATH) {
+        if (temp <= CONFIG.OPTIMAL_TEMP) {
+          tempFactor = Math.pow(temp / CONFIG.OPTIMAL_TEMP, 1.6);
+        } else {
+          const dropRatio = (temp - CONFIG.OPTIMAL_TEMP) / (CONFIG.TEMP_DEATH - CONFIG.OPTIMAL_TEMP);
+          tempFactor = Math.max(0, Math.pow(1 - dropRatio, 2.8));
+        }
+      }
+
+      // 한정 요인설 적용
+      const limitingResource = Math.min(lightFactor, co2Factor);
+      const combinedEfficiency = limitingResource * tempFactor;
+
+      return Math.max(0, Math.round(combinedEfficiency * CONFIG.MAX_BUBBLE_RATE_PER_MIN));
+    }
+
+    // 슬라이더 변경 감지 및 UI 반영
+    function updateValues() {
+      const light = Number(sliderLight.value);
+      const co2 = Number(sliderCo2.value);
+      const temp = Number(sliderTemp.value);
+
+      valLightText.textContent = light + ' %';
+      valCo2Text.textContent = co2.toFixed(1) + ' %';
+      valTempText.textContent = temp + ' ℃';
+
+      bubbleRatePerMin = calculatePhotosyntheticRate(light, co2, temp);
+      displayBubbleRate.textContent = bubbleRatePerMin + ' 개/분';
+
+      drawGraph();
+    }
+
+    function setGraphAxis(axisType) {
+      graphAxisVar = axisType;
+      document.getElementById('gtabLight').classList.toggle('active', axisType === 'light');
+      document.getElementById('gtabCo2').classList.toggle('active', axisType === 'co2');
+      document.getElementById('gtabTemp').classList.toggle('active', axisType === 'temp');
+      drawGraph();
+    }
+
+    function changeMode(mode) {
+      simMode = mode;
+      document.getElementById('tabBasic').classList.toggle('active', mode === 'basic');
+      document.getElementById('tabAdvanced').classList.toggle('active', mode === 'advanced');
+
+      if (mode === 'basic') {
+        basicSelectorBox.style.display = 'block';
+        applyVariableControl();
+      } else {
+        basicSelectorBox.style.display = 'none';
+        rowLight.classList.remove('disabled');
+        rowCo2.classList.remove('disabled');
+        rowTemp.classList.remove('disabled');
+        sliderLight.disabled = false;
+        sliderCo2.disabled = false;
+        sliderTemp.disabled = false;
+      }
+      updateValues();
+    }
+
+    function selectControlledVariable(varType) {
+      controlledVar = varType;
+      document.getElementById('chipLight').classList.toggle('active', varType === 'light');
+      document.getElementById('chipCo2').classList.toggle('active', varType === 'co2');
+      document.getElementById('chipTemp').classList.toggle('active', varType === 'temp');
+      setGraphAxis(varType);
+      applyVariableControl();
+    }
+
+    function applyVariableControl() {
+      if (simMode !== 'basic') return;
+
+      if (controlledVar === 'light') {
+        rowLight.classList.remove('disabled');
+        sliderLight.disabled = false;
+
+        rowCo2.classList.add('disabled');
+        sliderCo2.disabled = true;
+        sliderCo2.value = 1.0;
+
+        rowTemp.classList.add('disabled');
+        sliderTemp.disabled = true;
+        sliderTemp.value = 28;
+      } else if (controlledVar === 'co2') {
+        rowCo2.classList.remove('disabled');
+        sliderCo2.disabled = false;
+
+        rowLight.classList.add('disabled');
+        sliderLight.disabled = true;
+        sliderLight.value = 70;
+
+        rowTemp.classList.add('disabled');
+        sliderTemp.disabled = true;
+        sliderTemp.value = 28;
+      } else if (controlledVar === 'temp') {
+        rowTemp.classList.remove('disabled');
+        sliderTemp.disabled = false;
+
+        rowLight.classList.add('disabled');
+        sliderLight.disabled = true;
+        sliderLight.value = 70;
+
+        rowCo2.classList.add('disabled');
+        sliderCo2.disabled = true;
+        sliderCo2.value = 1.0;
+      }
+      updateValues();
+    }
+
+    function startSim() {
+      if (!isRunning) {
+        isRunning = true;
+        displayStatusText.textContent = "진행 중";
+        displayStatusText.style.color = "var(--accent-green)";
+        lastTimestamp = performance.now();
+        requestAnimationFrame(simulationLoop);
+      }
+    }
+
+    function pauseSim() {
+      isRunning = false;
+      displayStatusText.textContent = "일시정지";
+      displayStatusText.style.color = "var(--semantic-orange)";
+    }
+
+    function resetSim() {
+      isRunning = false;
+      elapsedTime = 0;
+      totalBubbles = 0;
+      bubbleFractionAccumulator = 0;
+      bubblesOnCanvas.length = 0;
+
+      displayStatusText.textContent = "대기 중";
+      displayStatusText.style.color = "var(--text-muted)";
+      displayTotalBubbles.textContent = "0 개";
+      expTimer.textContent = "경과 시간: 0.0초";
+
+      updateValues();
+      drawSimulation();
+      drawGraph();
+    }
+
+    function drawSimulation() {
+      const w = simCanvas.width;
+      const h = simCanvas.height;
+
+      simCtx.clearRect(0, 0, w, h);
+
+      // 다크 챔버 배경 그라디언트
+      const bgGrad = simCtx.createLinearGradient(0, 0, 0, h);
+      bgGrad.addColorStop(0, '#0a0a0a');
+      bgGrad.addColorStop(1, '#141414');
+      simCtx.fillStyle = bgGrad;
+      simCtx.fillRect(0, 0, w, h);
+
+      // 실험대 스탠드 베이스
+      simCtx.fillStyle = '#212121';
+      simCtx.fillRect(0, h - 28, w, 28);
+      simCtx.fillStyle = '#333333';
+      simCtx.fillRect(0, h - 28, w, 2);
+
+      // 전등 및 조명 빔
+      const lampX = 90;
+      const lampY = 160;
+      const lightPower = Number(sliderLight.value) / 100;
+
+      if (lightPower > 0.01) {
+        const lightGrad = simCtx.createRadialGradient(lampX + 30, lampY, 15, lampX + 160, lampY + 30, 260);
+        lightGrad.addColorStop(0, `rgba(255, 230, 100, ${0.35 * lightPower + 0.08})`);
+        lightGrad.addColorStop(1, 'rgba(255, 230, 100, 0)');
+        simCtx.fillStyle = lightGrad;
+        simCtx.beginPath();
+        simCtx.moveTo(lampX + 35, lampY - 25);
+        simCtx.lineTo(w - 60, 40);
+        simCtx.lineTo(w - 60, h - 28);
+        simCtx.lineTo(lampX + 35, lampY + 45);
+        simCtx.closePath();
+        simCtx.fill();
+      }
+
+      // 조명 스탠드
+      simCtx.strokeStyle = '#555555';
+      simCtx.lineWidth = 5;
+      simCtx.beginPath();
+      simCtx.moveTo(50, h - 28);
+      simCtx.lineTo(50, lampY);
+      simCtx.lineTo(lampX, lampY);
+      simCtx.stroke();
+
+      // 전등 갓
+      simCtx.fillStyle = '#2c2c2c';
+      simCtx.beginPath();
+      simCtx.moveTo(lampX, lampY - 30);
+      simCtx.lineTo(lampX + 35, lampY - 15);
+      simCtx.lineTo(lampX + 35, lampY + 25);
+      simCtx.lineTo(lampX, lampY + 40);
+      simCtx.closePath();
+      simCtx.fill();
+
+      // 전구 코어
+      simCtx.fillStyle = lightPower > 0 ? `rgb(255, ${Math.floor(240 * lightPower)}, ${Math.floor(140 * (1 - lightPower))})` : '#404040';
+      simCtx.beginPath();
+      simCtx.arc(lampX + 28, lampY + 5, 12, 0, Math.PI * 2);
+      simCtx.fill();
+
+      // 비커 및 수용액
+      const beakerX = 330;
+      const beakerY = 70;
+      const beakerW = 200;
+      const beakerH = 260;
+
+      // 비커 수용액 (딥 아쿠아 글로우)
+      const waterGrad = simCtx.createLinearGradient(beakerX, beakerY + 30, beakerX, beakerY + beakerH);
+      waterGrad.addColorStop(0, 'rgba(15, 60, 80, 0.45)');
+      waterGrad.addColorStop(1, 'rgba(10, 80, 110, 0.65)');
+      simCtx.fillStyle = waterGrad;
+      simCtx.fillRect(beakerX + 10, beakerY + 35, beakerW - 20, beakerH - 40);
+
+      // 깔때기
+      simCtx.strokeStyle = 'rgba(180, 200, 220, 0.4)';
+      simCtx.lineWidth = 2.5;
+      simCtx.beginPath();
+      simCtx.moveTo(beakerX + 35, beakerY + beakerH - 10);
+      simCtx.lineTo(beakerX + beakerW - 35, beakerY + beakerH - 10);
+      simCtx.lineTo(beakerX + beakerW / 2 + 10, beakerY + 140);
+      simCtx.lineTo(beakerX + beakerW / 2 + 10, beakerY + 80);
+      simCtx.lineTo(beakerX + beakerW / 2 - 10, beakerY + 80);
+      simCtx.lineTo(beakerX + beakerW / 2 - 10, beakerY + 140);
+      simCtx.lineTo(beakerX + 35, beakerY + beakerH - 10);
+      simCtx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      simCtx.fill();
+      simCtx.stroke();
+
+      // 시험관
+      const testTubeX = beakerX + beakerW / 2 - 18;
+      const testTubeY = beakerY + 20;
+      const testTubeW = 36;
+      const testTubeH = 120;
+
+      simCtx.fillStyle = 'rgba(255, 255, 255, 0.07)';
+      simCtx.fillRect(testTubeX, testTubeY, testTubeW, testTubeH);
+      simCtx.strokeStyle = 'rgba(180, 200, 220, 0.5)';
+      simCtx.lineWidth = 2;
+      simCtx.strokeRect(testTubeX, testTubeY, testTubeW, testTubeH);
+
+      // 포집된 산소 영역
+      const collectedOxygenHeight = Math.min(35, totalBubbles * 0.4);
+      if (collectedOxygenHeight > 2) {
+        simCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        simCtx.fillRect(testTubeX + 2, testTubeY + 2, testTubeW - 4, collectedOxygenHeight);
+        simCtx.fillStyle = '#0f172a';
+        simCtx.font = 'bold 11px sans-serif';
+        simCtx.fillText('산소(O₂)', testTubeX - 6, testTubeY + 14);
+      }
+
+      // 검정말 식물
+      const plantBaseX = beakerX + beakerW / 2;
+      const plantBaseY = beakerY + beakerH - 15;
+      const cutStemX = plantBaseX;
+      const cutStemY = beakerY + 130;
+
+      simCtx.strokeStyle = '#1e7b34';
+      simCtx.lineWidth = 5;
+      simCtx.beginPath();
+      simCtx.moveTo(plantBaseX, plantBaseY);
+      simCtx.quadraticCurveTo(plantBaseX - 25, plantBaseY - 60, cutStemX, cutStemY);
+      simCtx.stroke();
+
+      simCtx.fillStyle = '#1ed760';
+      const leafCount = 9;
+      for (let i = 0; i < leafCount; i++) {
+        const py = plantBaseY - 15 - (i * 11);
+        const px = plantBaseX - Math.sin(i * 0.7) * 12;
+        simCtx.beginPath();
+        simCtx.ellipse(px - 14, py, 11, 4, -0.3, 0, Math.PI * 2);
+        simCtx.fill();
+        simCtx.beginPath();
+        simCtx.ellipse(px + 14, py - 2, 11, 4, 0.3, 0, Math.PI * 2);
+        simCtx.fill();
+      }
+
+      // 절단면 포인트
+      simCtx.fillStyle = '#f3727f';
+      simCtx.beginPath();
+      simCtx.arc(cutStemX, cutStemY, 3.5, 0, Math.PI * 2);
+      simCtx.fill();
+
+      // 산소 기포 애니메이션
+      for (let i = bubblesOnCanvas.length - 1; i >= 0; i--) {
+        const b = bubblesOnCanvas[i];
+        if (isRunning) {
+          b.y -= b.vy;
+          b.x += Math.sin(b.y * 0.1) * 0.4;
+        }
+
+        if (b.y <= testTubeY + collectedOxygenHeight + 5) {
+          bubblesOnCanvas.splice(i, 1);
+          continue;
+        }
+
+        simCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        simCtx.beginPath();
+        simCtx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+        simCtx.fill();
+        simCtx.strokeStyle = '#1ed760';
+        simCtx.lineWidth = 1;
+        simCtx.stroke();
+      }
+
+      // 비커 외형선
+      simCtx.strokeStyle = 'rgba(200, 220, 240, 0.6)';
+      simCtx.lineWidth = 3;
+      simCtx.beginPath();
+      simCtx.moveTo(beakerX - 4, beakerY + 30);
+      simCtx.lineTo(beakerX + beakerW + 4, beakerY + 30);
+      simCtx.moveTo(beakerX, beakerY + 30);
+      simCtx.lineTo(beakerX, beakerY + beakerH);
+      simCtx.lineTo(beakerX + beakerW, beakerY + beakerH);
+      simCtx.lineTo(beakerX + beakerW, beakerY + 30);
+      simCtx.stroke();
+
+      // 온도계
+      const thermX = beakerX + beakerW - 25;
+      simCtx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+      simCtx.fillRect(thermX - 3, beakerY + 10, 6, beakerH - 20);
+      simCtx.fillStyle = '#f3727f';
+      simCtx.fillRect(thermX - 2.5, beakerY + beakerH - 20 - (Number(sliderTemp.value) * 1.8), 5, Number(sliderTemp.value) * 1.8);
+      simCtx.beginPath();
+      simCtx.arc(thermX, beakerY + beakerH - 15, 6, 0, Math.PI * 2);
+      simCtx.fill();
+
+      // 라벨
+      simCtx.fillStyle = '#b3b3b3';
+      simCtx.font = '600 12px sans-serif';
+      simCtx.fillText('시험관', beakerX + beakerW / 2 - 18, beakerY + 12);
+      simCtx.fillText('온도계', thermX - 16, beakerY + 6);
+      simCtx.fillText('검정말', beakerX + 45, beakerY + beakerH - 18);
+    }
+
+    function drawGraph() {
+      const gw = graphCanvas.width;
+      const gh = graphCanvas.height;
+      const padding = { left: 60, right: 30, top: 25, bottom: 45 };
+
+      graphCtx.clearRect(0, 0, gw, gh);
+
+      const plotW = gw - padding.left - padding.right;
+      const plotH = gh - padding.top - padding.bottom;
+
+      // X축 설정: 선택된 요인에 따라 최대값 및 단위 설정
+      let xMax = 100;
+      let xUnit = '%';
+      let xTitle = '빛의 세기 (%)';
+      let currentVal = Number(sliderLight.value);
+
+      if (graphAxisVar === 'co2') {
+        xMax = 2.0;
+        xUnit = '%';
+        xTitle = '이산화탄소 농도 (%)';
+        currentVal = Number(sliderCo2.value);
+      } else if (graphAxisVar === 'temp') {
+        xMax = 50;
+        xUnit = '℃';
+        xTitle = '물의 온도 (℃)';
+        currentVal = Number(sliderTemp.value);
+      }
+
+      const yMax = CONFIG.MAX_BUBBLE_RATE_PER_MIN; // 60 개/분
+
+      // 그래프 영역 배경
+      graphCtx.fillStyle = '#141414';
+      graphCtx.fillRect(padding.left, padding.top, plotW, plotH);
+
+      graphCtx.strokeStyle = '#242424';
+      graphCtx.lineWidth = 1;
+
+      // Y축 격자 (광합성량: 0~60 개/분)
+      const yTicks = 4;
+      for (let i = 0; i <= yTicks; i++) {
+        const val = Math.round((yMax / yTicks) * i);
+        const yPos = padding.top + plotH - (i / yTicks) * plotH;
+
+        graphCtx.beginPath();
+        graphCtx.moveTo(padding.left, yPos);
+        graphCtx.lineTo(padding.left + plotW, yPos);
+        graphCtx.stroke();
+
+        graphCtx.fillStyle = '#727272';
+        graphCtx.font = '11px sans-serif';
+        graphCtx.textAlign = 'right';
+        graphCtx.fillText(val + '개', padding.left - 8, yPos + 4);
+      }
+
+      // X축 격자
+      const xTicks = 5;
+      for (let i = 0; i <= xTicks; i++) {
+        const tVal = graphAxisVar === 'co2' ? ((xMax / xTicks) * i).toFixed(1) : Math.round((xMax / xTicks) * i);
+        const xPos = padding.left + (i / xTicks) * plotW;
+
+        graphCtx.beginPath();
+        graphCtx.moveTo(xPos, padding.top);
+        graphCtx.lineTo(xPos, padding.top + plotH);
+        graphCtx.stroke();
+
+        graphCtx.fillStyle = '#727272';
+        graphCtx.font = '11px sans-serif';
+        graphCtx.textAlign = 'center';
+        graphCtx.fillText(tVal + xUnit, xPos, padding.top + plotH + 18);
+      }
+
+      // 축 선
+      graphCtx.strokeStyle = '#444444';
+      graphCtx.lineWidth = 1.5;
+      graphCtx.beginPath();
+      graphCtx.moveTo(padding.left, padding.top);
+      graphCtx.lineTo(padding.left, padding.top + plotH);
+      graphCtx.lineTo(padding.left + plotW, padding.top + plotH);
+      graphCtx.stroke();
+
+      // 축 제목
+      graphCtx.fillStyle = '#b3b3b3';
+      graphCtx.font = '700 12px sans-serif';
+      graphCtx.textAlign = 'left';
+      graphCtx.fillText('발생하는 산소의 양 (분당 기포 수)', padding.left - 10, padding.top - 10);
+      graphCtx.textAlign = 'right';
+      graphCtx.fillText(xTitle, padding.left + plotW, padding.top + plotH + 36);
+
+      // 1) 기록된 실험 데이터 포인트 및 연결선 그리기
+      const filteredRecords = recordedRecords
+        .map(r => ({
+          x: graphAxisVar === 'light' ? r.rawLight : (graphAxisVar === 'co2' ? r.rawCo2 : r.rawTemp),
+          y: r.rawRate
+        }))
+        .sort((a, b) => a.x - b.x);
+
+      if (filteredRecords.length > 0) {
+        // 기록 점들 잇는 선
+        graphCtx.strokeStyle = 'rgba(30, 215, 96, 0.45)';
+        graphCtx.lineWidth = 2;
+        graphCtx.setLineDash([4, 4]);
+        graphCtx.beginPath();
+        filteredRecords.forEach((pt, idx) => {
+          const px = padding.left + (Math.max(0, Math.min(xMax, pt.x)) / xMax) * plotW;
+          const py = padding.top + plotH - (Math.max(0, Math.min(yMax, pt.y)) / yMax) * plotH;
+          if (idx === 0) graphCtx.moveTo(px, py);
+          else graphCtx.lineTo(px, py);
+        });
+        graphCtx.stroke();
+        graphCtx.setLineDash([]);
+
+        // 기록 점 마커
+        filteredRecords.forEach(pt => {
+          const px = padding.left + (Math.max(0, Math.min(xMax, pt.x)) / xMax) * plotW;
+          const py = padding.top + plotH - (Math.max(0, Math.min(yMax, pt.y)) / yMax) * plotH;
+
+          graphCtx.fillStyle = '#1ed760';
+          graphCtx.beginPath();
+          graphCtx.arc(px, py, 5, 0, Math.PI * 2);
+          graphCtx.fill();
+          graphCtx.strokeStyle = '#ffffff';
+          graphCtx.lineWidth = 1.5;
+          graphCtx.stroke();
+        });
+      }
+
+      // 2) 현재 실시간 슬라이더 조건의 위치 표시 (가이드선 + 밝은 점)
+      const curX = padding.left + (Math.max(0, Math.min(xMax, currentVal)) / xMax) * plotW;
+      const curY = padding.top + plotH - (Math.max(0, Math.min(yMax, bubbleRatePerMin)) / yMax) * plotH;
+
+      // 수직 가이드 점선
+      graphCtx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+      graphCtx.lineWidth = 1;
+      graphCtx.setLineDash([3, 3]);
+      graphCtx.beginPath();
+      graphCtx.moveTo(curX, padding.top + plotH);
+      graphCtx.lineTo(curX, curY);
+      graphCtx.stroke();
+      graphCtx.setLineDash([]);
+
+      // 현재 상태 펄스 점 (화이트 코어 + 네온 그린 링)
+      graphCtx.fillStyle = '#1ed760';
+      graphCtx.beginPath();
+      graphCtx.arc(curX, curY, 7, 0, Math.PI * 2);
+      graphCtx.fill();
+
+      graphCtx.fillStyle = '#ffffff';
+      graphCtx.beginPath();
+      graphCtx.arc(curX, curY, 3.5, 0, Math.PI * 2);
+      graphCtx.fill();
+
+      // 현재 값 라벨 말풍선
+      graphCtx.fillStyle = '#ffffff';
+      graphCtx.font = 'bold 11px sans-serif';
+      graphCtx.textAlign = curX > padding.left + plotW - 40 ? 'right' : 'left';
+      graphCtx.fillText(`${bubbleRatePerMin}개/분`, curX + (curX > padding.left + plotW - 40 ? -10 : 10), curY - 5);
+    }
+
+    function simulationLoop(timestamp) {
+      if (!isRunning) return;
+
+      const dt = (timestamp - lastTimestamp) / 1000;
+      lastTimestamp = timestamp;
+
+      elapsedTime += dt;
+      expTimer.textContent = `경과 시간: ${elapsedTime.toFixed(1)}초`;
+
+      const bubblesPerSecond = bubbleRatePerMin / 60;
+      bubbleFractionAccumulator += bubblesPerSecond * dt;
+
+      while (bubbleFractionAccumulator >= 1.0) {
+        bubbleFractionAccumulator -= 1.0;
+        totalBubbles++;
+        displayTotalBubbles.textContent = `${totalBubbles} 개`;
+
+        const cutStemX = 330 + 100;
+        const cutStemY = 70 + 130;
+        bubblesOnCanvas.push({
+          x: cutStemX + (Math.random() * 4 - 2),
+          y: cutStemY,
+          radius: 3 + Math.random() * 2.5,
+          vy: 1.5 + Math.random() * 0.8
+        });
+      }
+
+      drawSimulation();
+      requestAnimationFrame(simulationLoop);
+    }
+
+    function recordCurrentData() {
+      const light = Number(sliderLight.value);
+      const co2 = Number(sliderCo2.value);
+      const temp = Number(sliderTemp.value);
+      const count = recordedRecords.length + 1;
+
+      const recordItem = {
+        id: count,
+        rawLight: light,
+        rawCo2: co2,
+        rawTemp: temp,
+        rawRate: bubbleRatePerMin,
+        light: light + ' %',
+        co2: co2.toFixed(1) + ' %',
+        temp: temp + ' ℃',
+        rate: bubbleRatePerMin + ' 개/분',
+        accum: totalBubbles + ' 개'
+      };
+
+      recordedRecords.push(recordItem);
+      renderTable();
+      drawGraph();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('tableBody');
+      if (recordedRecords.length === 0) {
+        tbody.innerHTML = `<tr id="emptyTableRow"><td colspan="6" class="empty-state">하단 [결과 기록] 버튼을 누르면 현재 조건과 결과가 기록됩니다.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = '';
+      recordedRecords.forEach((item) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${item.id}</strong></td>
+          <td>${item.light}</td>
+          <td>${item.co2}</td>
+          <td>${item.temp}</td>
+          <td style="color:var(--accent-green); font-weight:700;">${item.rate}</td>
+          <td>${item.accum}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function clearTableData() {
+      recordedRecords = [];
+      renderTable();
+      drawGraph();
+    }
+
+    window.addEventListener('load', () => {
+      applyVariableControl();
+      updateValues();
+      drawSimulation();
+      drawGraph();
+    });
+  </script>
+</body>
+</html>
